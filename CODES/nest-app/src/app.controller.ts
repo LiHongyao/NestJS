@@ -2,19 +2,20 @@
  * @Author: Lee
  * @Date: 2022-05-25 08:45:51
  * @LastEditors: Lee
- * @LastEditTime: 2022-05-25 17:52:02
+ * @LastEditTime: 2022-05-25 22:12:55
  * @Description:
  */
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ParseIntPipe } from './common/pipes/parse-int.pipe';
+import { HelloWorldInterceptor } from './common/interceptors/hello-world.interceptor';
 
+@UseInterceptors(HelloWorldInterceptor)
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get(':id')
-  getUser(@Param('id', ParseIntPipe) id: number) {
-    return this.appService.getUser(id);
+  @Get('/todos')
+  async getTodos() {
+    return await this.appService.getTodos();
   }
 }
