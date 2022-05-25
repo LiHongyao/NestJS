@@ -1,0 +1,550 @@
+#  概述
+
+前一篇有提到 Provider 与 Module 之间有很核心的机制，该机制使用了 **依赖注入** 的概念。这边会先针对依赖注入及 Nest 如何将其融入进行解释，再针对 Provider 的使用方式做说明，如此一来会对 Provider 有更深度的理解，在学习上不会满头问号，那就废话不多说赶快开始吧！
+
+# 依賴注入 (Dependency Injection)
+
+依赖注入是一种设计方法，通过此方式可以大幅降低耦合度，来个简单的例子吧，假设有两个 class 分别叫 `Computer` 与 `CPU`：
+
+```typescript
+class CPU {
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+
+class Computer {
+  cpu: CPU;
+  constructor(cpu: CPU) {
+    this.cpu = cpu;
+  }
+}
+```
+
+可以看到 Computer 在建构的时候需要带入类型为 CPU 的参数，这样的好处是把 CPU 的功能都归在 CPU 里、Computer 不需要实现 CPU 的功能，甚至抽换成不同 CPU 都十分方便：
+
+```javascript
+const i7 = new CPU('i7-11375H');
+const i9 = new CPU('i9-10885H');
+
+const PC1 = new Computer(i7);
+const PC2 = new Computer(i9);
+```
+
+# Nest 的依赖注入机制
+
+不过依赖注入跟 Provider 还有 Module 有什麽关系呢？仔细回想一下，当我们在 Controller 的 `constructor` 中注入了 Service 后，没有使用到任何 `new` 相关的动作却可以直接使用。这里以 `app.controller.ts` 为例：
+
+```typescript
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+没有经过实例化那这个实例从哪里来的？前面有说过当 Module 建立起来的同时，会把 providers 里面的项目实例化，而我们注入的 Service 就是通过这样的方式建立实例的，也就是说有个机制在维护这些实例，这个机制叫 **控制反转容器 (IoC Container)**。
+
+控制反转容器是通过 `token` 来找出对应项目的，有点类似 `key/value` 的概念，这时候可能会想说：我没有指定 `token` 是什麽， Nest 怎麽知道对应的实例是哪一个？事实上，我们写 `providers` 的时候就已经指定了。这里以 `app.module.ts` 为例：
+
+```
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [
+    AppService
+  ],
+})
+export class AppModule {}
+```
+
+奇怪，只是写了一个 `AppService` 就指定了 `token`？没错，因为那是缩写，把它展开来的话会像这样：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [
+    { provide: AppService, useClass: AppService }
+  ],
+})
+export class AppModule {}
+```
+
+可以看到变成了一个对象，该对象的 `provide` 即 `token`，`useClass` 则是指定使用的 `class` 是什么，进而建立实例。
+
+# Provider
+
+Provider 通过控制反转容器做实例的管理，可以很方便且有效地使用这些 Provider，而 Provider 大致上可以分成两种：
+
+## 标准提供者
+
+这是最简单的用法，也是大多数 Service 的用法，只需在 `class` 上添加 `@Injectable` 让 Nest 知道这个 `class` 是可以由控制反转容器管理的。通常 Service 会使用下方指令来产生：
+
+```shell
+$ nest generate service <SERVICE_NAME>
+```
+
+> **！注意**：`<SERVICE_NAME>` 可以含有路径，如：`shared/todo`，这样就会在 `src` 目录下建立该路径并含有 Service。
+
+这里以 `app.service.ts` 为例：
+
+```typescript
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
+}
+```
+
+在 Module 中，只需要在 `providers` 中声明该 Service 即可。这里以 `app.module.ts` 为例：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+当然你也可以写成展开式的，如：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [
+    { provide: AppService, useClass: AppService }
+  ],
+})
+export class AppModule {}
+```
+
+## 自定义提供者
+
+如果觉得标准 Provider 无法满足需求，如：
+
+- 创建自定义实例，而不是让 `Nest` 实例化（或返回其缓存实例）类
+- 想要在其他依赖项中重用现有的类
+- 使用模拟版本覆盖类进行测试
+
+Nest 提供了多种方式来自订 Provider，都是通过展开式进行定义
+
+### 值提供者（useValue）
+
+这类型的 Provider 主要是用来：
+
+- 提供常数 (Constant)。
+- 将外部函数库注入到控制反转容器。
+- 将 class 抽换成特定的模拟版本。
+
+那要如何使用呢？在展开式中使用 `useValue` 来配置。这里以 `app.module.ts` 为例：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [{ provide: AppService, useValue: { name: 'Li-HONGYAO' } }],
+})
+export class AppModule {}
+```
+
+修改 `app.controller.ts` 来查看 `token` 为 `AppService` 的内容是什么
+
+```typescript
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {
+    console.log(this.appService);
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+输出内容：
+
+```javascript
+{ name: 'Li-HONGYAO' }
+```
+
+### 非类提供者
+
+事实上，Provider 的 `token` 不一定要使用 `class`，Nest 允许使用以下项目：
+
+- `string`
+- `symbol`
+- `enum`
+
+这边同样以 `app.module.ts` 为例，我们指定 `token` 为字串 `USER_NAME`，并使用 `Li-HONGYAO` 作为值：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService, { provide: 'USER_NAME', useValue: 'Li-HONGYAO' }],
+})
+export class AppModule {}
+```
+
+在注入的部分需要特别留意，要使用 `@Inject(token?: string)` 装饰器来取得。这里以 `app.controller.ts` 为例：
+
+```typescript
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Inject('USER_NAME') private readonly userName: string,
+  ) {}
+
+  @Get()
+  getHello(): string {
+    console.log(this.userName);
+    return this.appService.getHello();
+  }
+}
+```
+
+执行输出：`Li-HONGYAO`
+
+> **！提醒**：通常会把这类型的 `token` 名称放在独立的文件里，好处是当有其他地方需要使用的时候，可以直接取用该文件里的内容，而不需要再重写一次 `token` 的名称。
+
+### 类提供者（useClass）
+
+这类型的 Provider 最典型的用法就是让 `token` 指定为抽象类别，并使用 `useClass` 来根据不同环境提供不同的类。
+
+参考 [官网示例 >>](https://docs.nestjs.cn/8/fundamentals?id=%e7%b1%bb%e6%8f%90%e4%be%9b%e8%80%85-useclass)
+
+### 工厂提供者（useFactory）
+
+这类型的 Provider 使用工厂模式让 Provider 更加灵活，透过 **注入其他依赖** 来变化出不同的实例，是很重要的功能。使用 `useFactory` 来指定工厂模式的函数，并通过 `inject` 来注入其他依赖。以 `app.module.ts` 为例：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+class MessageBox {
+  message: string;
+  constructor(message: string) {
+    this.message = message;
+  }
+}
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    {
+      provide: 'MESSAGE_BOX',
+      useFactory: (appService: AppService) => {
+        const message = appService.getHello();
+        return new MessageBox(message);
+      },
+      inject: [AppService],
+    },
+  ],
+})
+export class AppModule {}
+```
+
+稍微修改一下 `app.controller.ts`：
+
+```typescript
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Inject('MESSAGE_BOX') private readonly messageBox,
+  ) {
+    console.log(this.messageBox);
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+控制台输出：`MessageBox { message: 'Hello World!' }`
+
+### 别名提供者（useExisting）
+
+这个 Provider 主要就是替已经存在的 Provider 取别名，使用 `useExist` 来指定要使用哪个 Provider。以 `app.module.ts` 为例：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    { provide: 'ALIAS_APP_SERVICE', useExisting: AppService },
+  ],
+})
+export class AppModule {}
+```
+
+这样就会把 `ALIAS_APP_SERVICE` 指向到 `AppService` 的实例。这里修改一下 `app.controller.ts` 做验证：
+
+```typescript
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Inject('ALIAS_APP_SERVICE') private readonly alias: AppService,
+  ) {
+    console.log(this.alias === this.appService); // 進行比對
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+会发现两个参数是相等的，控制台输出：`true`
+
+# 导出自定义提供者
+
+在介绍共享模块的时候，有提到可以通过 Module 的 `exports` 将 Provider 导出，那自定义 Provider 要如何导出呢？这部分可以通过一些小技巧来达成。先建立一个 `SomeModule` 来做测试：
+
+```shell
+$ nest g mo some 
+```
+
+接着我们自定义一些提供者，然后在模块中导出：
+
+```typescript
+import { Module } from '@nestjs/common';
+
+const SOME_A = {
+  provide: 'SOME_A',
+  useValue: { name: 'Li-HONGYAO' },
+};
+
+@Module({
+  providers: [SOME_A],
+  exports: [SOME_A],
+})
+export class SomeModule {}
+```
+
+然后在 `AppModule` 导入：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { SomeModule } from './some/some.module';
+
+@Module({
+  imports: [SomeModule],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+修改 `app.controller.ts` 查看結果：
+
+```typescript
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Inject('SOME_A') private readonly someA,
+  ) {
+    console.log(this.someA);
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+控制台输出：`{ name: 'Li-HONGYAO' }`
+
+# 异步提供者
+
+有时候可能需要等待某些异步的操作来建立 Provider，比如：需要与数据库连线，Nest App 会等待该 Provider 建立完成才正式启动。
+
+调整一下 `some.module.ts` 的内容：
+
+```typescript
+import { Module } from '@nestjs/common';
+
+const SOME_A = {
+  provide: 'ASYNC_PROVIDE',
+  useFactory: async () => {
+    const infos = new Promise((resolve) => {
+      setTimeout(() => resolve({ name: 'Li-HONGYAO', loc: '成都' }), 2000);
+    });
+    return await infos;
+  },
+};
+
+@Module({
+  providers: [SOME_A],
+  exports: [SOME_A],
+})
+export class SomeModule {}
+```
+
+修改 *`app.controller.ts`*
+
+```typescript
+import { Controller, Get, Inject } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Inject('ASYNC_PROVIDE') private readonly asyncProvide,
+  ) {
+    console.log(this.asyncProvide);
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+在等待1s后，控制台输出：`{ name: 'Li-HONGYAO', loc: '成都' }`
+
+# 可选提供者
+
+有时候可能会有 Provider 没有在模块中导入但却注入到Service中的的情况，这样在启动时会报错，因为 Nest 找不到对应的 Provider，那遇到这种情况该如何处理呢？首先，遇到这类型情况通常会给个默认值代替没被注入的 Provider，然后要在注入的地方添加 `@Optional` 装饰器。这里我们同样沿用上方示例，去修改 `app.module.ts` 的内容，将 `SomeModule` 从 `imports` 中移除：
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+此时，控制台肯定会抛出异常，如：
+
+```
+Error: Nest can't resolve dependencies of the AppController (AppService, ?). Please make sure that the argument ASYNC_PROVIDE 
+at index [1] is available in the AppModule context.
+
+Potential solutions:
+- If ASYNC_PROVIDE is a provider, is it part of the current AppModule?
+- If ASYNC_PROVIDE is exported from a separate @Module, is that module imported within AppModule?
+  @Module({
+    imports: [ /* the Module containing ASYNC_PROVIDE */ ]
+  })
+```
+
+接着去修改 `app.controller.ts` 的內容，替 `ASYNC_PROVIDE` 給定默认值：
+
+```typescript
+import { Controller, Get, Inject, Optional } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    @Optional()
+    @Inject('ASYNC_PROVIDE')
+    private readonly asyncProvide = { name: '默认值', loc: '成都' },
+  ) {
+    console.log(this.asyncProvide);
+  }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+```
+
+控制台输出：`{ name: '默认值', loc: '成都' }`
+
+# 小结
+
+1. Provider 与 Module 之间有依赖注入机制的关系。
+2. 通过 **控制反转容器** 管理 Provider 实例。
+3. Provider 分为 **标准 Provider** 与 **自订（自定义） Provider**。
+4. 自订 Provider 使用展开式。
+5. 有四种方式提供自订 Provider：`useValue`、`useClass`、`useFactory`、`useExisting`。
+6. Provider 的 token 可以是：`string`、`symbol`、`enum`。
+
+到目前位置，你已经掌握了 `Nest` 最核心的铁三角，后面我将开始介绍一些其他的功能啦~
+
+
+
+
+
