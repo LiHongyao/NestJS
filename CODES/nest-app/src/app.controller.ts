@@ -2,20 +2,25 @@
  * @Author: Lee
  * @Date: 2022-05-25 08:45:51
  * @LastEditors: Lee
- * @LastEditTime: 2022-05-25 22:12:55
- * @Description:
+ * @LastEditTime: 2022-05-26 18:49:59
+ * @Description: 
  */
-import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { HelloWorldInterceptor } from './common/interceptors/hello-world.interceptor';
 
-@UseInterceptors(HelloWorldInterceptor)
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {
+    this.appService.addBookToStorage({ name: 'Nest Tutorial' });
+    this.appService.addBookToBookStorage({ name: 'Angular Tutorial' });
+    console.log(`AppController: ${Math.random()}`);
+  }
 
-  @Get('/todos')
-  async getTodos() {
-    return await this.appService.getTodos();
+  @Get('/compare')
+  getCompare() {
+    return {
+      storage: this.appService.getStorageList(),
+      books: this.appService.getBookList(),
+    };
   }
 }
