@@ -76,55 +76,45 @@ $ npm run start:dev
 
 ```
 nodejs
-├── package.json
-├── README.md
+├── node_modules
 ├── src
-│   │   └── constants（全局常量定义）
-│   │       ├──common.constants.ts
-│   │   └── utils（常用工具类）
-│   │       ├──http.util.ts
-│   │       └──file.util.ts
-│   ├── app.module.ts（模块配置文件）
-│   ├── common （通用模块，包含自定义装饰器、过滤器、守卫、拦截器、中间件）
-│   │   ├── decorators （项目通用装饰器）
-│   │   │   └── roles.decorator.ts
-│   │   ├── filters （过滤器）
-│   │   │   └── http-exception.filter.ts
-│   │   ├── guards （守卫）
-│   │   │   └── roles.guard.ts
-│   │   ├── interceptors （拦截器）
-│   │   │   ├── exception.interceptor.ts
-│   │   │   ├── logging.interceptor.ts
-│   │   ├── middleware （中间件）
-│   │   │   └── logger.middleware.ts
-│   │   └── pipes （管道，主要用于数据验证和类型转换）
-│   │       ├── parse-int.pipe.ts
-│   │       └── validation.pipe.ts
-│   ├── config （配置文件信息）
-│   │   ├── database.ts
-│   │   ├── redis.ts
-│   ├── jobs （高并发场景下队列处理）
-│   ├── main.ts （入口文件）
-│   ├── modules （业务代码，按目录区分模块）
-│   │   ├── hello
-│   │   │   ├── hello.controller.ts
-│   │   │   ├── hello.module.ts
-│   │   │   └── hello.service.ts
+│   ├── auth
+│   │   ├── dto
+│   │   ├── strategies （策略）
+│   │   └── ...
+│   ├── common （通用模块）
+│   │   ├── constants （全局常量定义）
+│   │   └── interfaces （全局类型声明）
+│   ├── configs （配置文件信息）
+│   ├── core （核心模块 - 主要放置和Nest直接相关的模块，如 守卫、过滤器等...）
+│   │   ├── decorators（装饰器）
+│   │   │   └── public.decorator.ts
+│   │   ├── filters（过滤器）
+│   │   │   └── global-exceprtion.filter.ts
+│   │   ├── guards（守卫）
+│   │   │   └── jwt-auth.guard.ts
+│   │   ├── interceptors（拦截器）
+│   │   │   └── response.interceptor.ts
+│   │   ├── middleware（中间件）
+│   │   │   └── visitor.middleware.ts
+│   │   └── pipes（管道，主要用于数据验证和类型转换）
+│   │   │   └── validation.pipe.ts
+│   ├── database（数据库相关）
+│   ├── shared（业务代码）
 │   │   └── users
 │   │   │   ├── dto （数据传输对象定义）
 │   │   │   │   └── users.create.dto.ts
 │   │   │   │   └── users.update.dto.ts
 │   │       ├── users.controller.ts （控制层）
-│   │       ├── users.entity.ts （映射数据库模型对象）
 │   │       ├── users.module.ts (模块定义）
 │   │       └── users.service.ts （service层）
-│   ├── tasks （定时任务）
-│   │   ├── tasks.module.ts
-│   │   └── tasks.service.ts
-│   └── templates （页面模板）
+│   ├── swagger（Api接口文档）
+│   ├── app.module.ts
+│   └── main.ts
 ├── test （单元测试）
 │   ├── app.e2e-spec.ts
 ├── tsconfig.json
+├── ...
 ```
 
 # 小结

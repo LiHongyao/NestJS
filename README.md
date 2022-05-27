@@ -50,8 +50,7 @@ Nest 特点：
 
 # 参考文献
 
-- [ 中文文档 >>](https://docs.nestjs.cn/)
-- [工程目录与代码规范 >>](https://www.toimc.com/nestjs-example-project-4/)
+- [Nest v8.x 中文官方文档 >>](https://docs.nestjs.cn/)
+- [官网代码示例 >>](https://github.com/nestjs/nest/tree/master/sample)
 - https://gitee.com/wenqiyun/nest-admin
-- https://github.com/nestjs
 - https://ithelp.ithome.com.tw/users/20119338/ironman/3880
