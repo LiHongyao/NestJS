@@ -1,10 +1,10 @@
 # Nest 基本概念
 
-Nest 采用 **模块化** 设计，将各个不同的功能打包成 **模块 (Module)**，而模块至少有 一个以上，并且是以 **树状结构** 发散出去，最顶部的模块称为 **根模块(Root Module)**，其概念如下：
+Nest 采用 **模块化** 设计，将各个不同的功能打包成 **模块**，而模块至少有 一个以上，并且是以 **树状结构** 发散出去的，最顶部的模块称为 **根模块**，其概念如下：
 
 ![](./IMGS/20119338Qs3P92SDp6.png)
 
-而一个 **有路由机制** 的模块会带有 **控制器 (Controller)** 与 **服务 (Service)**，它们之间的关係如下：
+而一个 **有路由机制** 的模块会带有 **控制器 (Controller)** 与 **服务 (Service)**，它们之间的关系如下：
 
 ![](./IMGS/20119338k0YJe9Uv2Y.png)
 
@@ -30,7 +30,7 @@ $ npm install -g @nestjs/cli
 $ nest new <APP_NAME>
 ```
 
-> **！Tips**：你可以通过 `nest --help` 查看有关 Nest 的命令行操作，我认为只是有必要的，了解常用的指令操作可提高你创建对应模块的效率。
+> **！Tips**：你可以通过 `nest --help` 查看有关 Nest 的命令行操作，我认为这是有必要的，了解常用的指令操作可提高你创建对应模块的效率。
 
 基于 CLI 新建项目之后，将会创建 `<APP_NAME>` 目录， 并生成相应的配套文件，核心文件：
 
@@ -43,7 +43,7 @@ $ nest new <APP_NAME>
   - `app.module.ts`：根模块
   - `app.service.ts`：服务（提供者）（负责业务逻辑）- 非必须
 
-> **！Tips**：以`spec.ts` 结尾的文件为测试文件，可直接删除，本系列教程不会设计 `spec.ts` 的应用。
+> **！Tips**：以`spec.ts` 结尾的文件为测试文件，可直接删除，本系列教程不会涉及 `spec.ts` 的应用。
 
 `main.ts` 包含一个异步函数，它负责 **引导** 我们的应用程序：
 
@@ -58,7 +58,7 @@ async function bootstrap() {
 bootstrap();
 ```
 
-以 `bootstrap` 作为载入函数，通过 `NestFactory.create(AppModule)` 产生一个 Nest App 的实例 (`Instance`)，并通过监听(`listen`) 3000 端口将程序跑起来。
+以 `bootstrap` 作为载入函数，通过 `NestFactory.create(AppModule)` 生成一个 Nest App 的实例，并通过监听 `3000` 端口将程序跑起来。
 
 现在我们执行指令，启动项目：
 
@@ -78,7 +78,7 @@ $ npm run start:dev
 nodejs
 ├── node_modules
 ├── src
-│   ├── auth
+│   ├── auth （用户认证相关）
 │   │   ├── dto
 │   │   ├── strategies （策略）
 │   │   └── ...
@@ -116,6 +116,8 @@ nodejs
 ├── tsconfig.json
 ├── ...
 ```
+
+> **！提示**：这里拟出的目录结构仅供参考。
 
 # 小结
 
