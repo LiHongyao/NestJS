@@ -4,9 +4,6 @@
 
 # 什么是 Swagger
 
-- [参考指南 >>](https://docs.nestjs.cn/8/openapi)
-- [包地址 >>](https://www.npmjs.com/package/@nestjs/swagger)
-
 ![](./IMGS/20119338RloglKEMqo.png)
 
 Swagger 是一套把 API 用视觉化方式呈现的工具，简单来说，就是会产生一个页面将各个 API 条列出来，包含了 API 所需的参数以及参数格式等，甚至可以通过这个页面直接对后端的 API 做操作，达到了 Postman 的效果，大幅降低 API 文件的维护成本，更可以促进前后端的开发效率。
@@ -71,3 +68,5 @@ bootstrap();
 
 - *`@ApiParam({ name: 'id', description: '更新索引', type: Number, example: 1 })`*
 - `@ApiProperty({ name: 'age', description: 'age', type: Number })`
+
+> **！提示**：关于 swagger 的更多内容，请参考 [这里 >>](https://docs.nestjs.cn/8/openapi)
