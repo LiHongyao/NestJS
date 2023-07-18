@@ -18,46 +18,33 @@ $ npm install --save @nestjs/swagger swagger-ui-express
 
 ## 配置
 
-*`src/main.ts`*
+**`src/swaggers/index.ts`**
 
 ```typescript
-import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
 
-const logger = new Logger('main');
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  // -- 允许跨域
-  app.enableCors();
-  // -- 请求前缀
-  app.setGlobalPrefix('api');
-
-  // -- swagger
+export const setupSwagger = (app: INestApplication) => {
   const swaggerOptions = new DocumentBuilder()
-    .setTitle('Swagger 文档示例')
-    .setDescription('耀哥Nest.js指南 Apis')
+    .setTitle('荣发装饰·接口文档')
+    .addTag('APIs', '天道酬勤')
+    .setDescription('Swagger-ui Apis.')
     .setVersion('1.0')
     .setLicense('Apache 2.0', 'https://www.apache.org/licenses/LICENSE-2.0')
-    .setContact('Li-HONGYAO', 'https://github.com/lihongyao', 'lihy_online@163.com')
     .addServer('http://localhost:3000', '开发环境服务')
     .addServer('http://localhost:8888', '测试环境服务')
-    .addTag('APIs')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+    .setContact('李鴻耀同學', 'https://github.com/lihongyao', 'lihy_online@163.com')
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerOptions, {
-    ignoreGlobalPrefix: false,
-  });
-  SwaggerModule.setup('docs', app, document);
-  // -- 监听端口
-  await app.listen(3000);
-  // -- 日志输出
-  logger.log('服务已启动...');
-  logger.log('swagger-ui：http://localhost:3000/docs');
-}
-bootstrap();
+  const document = SwaggerModule.createDocument(app, swaggerOptions, { ignoreGlobalPrefix: false });
+  SwaggerModule.setup('api/docs', app, document);
+};
+```
+
+**`src/main.ts`**
+
+```typescript
+setupSwagger(app);
 ```
 
 ## 示例
@@ -66,7 +53,7 @@ bootstrap();
 - `@ApiOperation({ summary: '接口名' })`
 - `@ApiQuery({ name: 'id', description: '查询索引', type: Number, example: 1, required: false })`
 
-- *`@ApiParam({ name: 'id', description: '更新索引', type: Number, example: 1 })`*
+- `@ApiParam({ name: 'id', description: '更新索引', type: Number, example: 1 })`
 - `@ApiProperty({ name: 'age', description: 'age', type: Number })`
 
-> **！提示**：关于 swagger 的更多内容，请参考 [这里 >>](https://docs.nestjs.cn/8/openapi)
+> **！提示**：关于 swagger 的更多内容，请参考 [这里 >>](https://docs.nestjs.cn/9/openapi)

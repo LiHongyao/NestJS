@@ -14,7 +14,7 @@ throw new Error('错误信息');
 
 ![](./IMGS/20119338ITCS0KRsJ5.png)
 
-我们可以做个小实验，修改一下 `app.controller.ts` 的内容，在 `getHello()` 裡直接抛出 Error：
+我们可以做个小实验，修改一下 `app.controller.ts` 的内容，在 `getHello()` 里直接抛出 Error：
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
@@ -41,7 +41,7 @@ export class AppController {
 }
 ```
 
-原因是 Nest 内建的 Exception filter 会去侦测抛出的错误是什麽类型的，它只能够接受 Nest 内建的 `HttpException` 与继承该类别的 Exception，若不属于这类型的错误就会直接抛出 `Internal server error`。
+原因是 Nest 内建的 Exception filter 会去侦测抛出的错误是什么类型的，它只能够接受 Nest 内建的 `HttpException` 与继承该类别的 Exception，若不属于这类型的错误就会直接抛出 `Internal server error`。
 
 # 标准Exception
 
@@ -202,7 +202,7 @@ export class AppController {
 
 # 自定义异常过滤器
 
-如果希望完全掌握错误处理机制的话，Nest 是可以自订 Exception filter 的，通过这样的方式来添加 log，或是直接在这个层级定义响应的格式。Exception Filter 必须要使用 `@Catch(...exceptions: Type<any>[])` 装饰器来捕捉错误，可以指定要捕捉特定类别的 Exception，也可以捕捉全部的错误，若要捕捉全部就不需要带任何参数到 `@Catch` 里，另外，还需要让该 `class` 去实现 `ExceptionFilter<T>`，它会要求你必须在类中构建一个`catch(exception: T, host: ArgumentsHost)` 方法。
+如果希望完全掌握错误处理机制的话，Nest 是可以自定义 Exception filter 的，通过这样的方式来添加 log，或是直接在这个层级定义响应的格式。Exception Filter 必须要使用 `@Catch(...exceptions: Type<any>[])` 装饰器来捕捉错误，可以指定要捕捉特定类别的 Exception，也可以捕捉全部的错误，若要捕捉全部就不需要带任何参数到 `@Catch` 里，另外，还需要让该 `class` 去实现 `ExceptionFilter<T>`，它会要求你必须在类中构建一个`catch(exception: T, host: ArgumentsHost)` 方法。
 
 我们在 `src/common/filters` 下新增 `http-exception.filter.ts`，来建立一个捕捉 `HttpException` 的 Exception filter：
 
@@ -248,7 +248,7 @@ export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
 
 是一个用来取得当前请求相关参数（上下文）的类，它是一个抽象概念，由于 Nest 能够实现 REST API、WebSocket 与 MicroService，每个架构的参数都会有些不同，这时候通过抽象的方式做兼容是最合适的，以 Express 作为底层的 REST API 来说，它封装了 `Request`、`Response` 与 `NextFunction`，但如果是 MicroService 的话，封装的内容又不同了，所以 `ArgumentsHost` 提供了一些共同介面来取得这些底层的信息。
 
-具体内容 [参考这里 >>](https://docs.nestjs.cn/8/fundamentals?id=%e5%ba%94%e7%94%a8%e4%b8%8a%e4%b8%8b%e6%96%87)
+具体内容 [参考这里 >>](https://docs.nestjs.cn/9/fundamentals?id=%e5%ba%94%e7%94%a8%e4%b8%8a%e4%b8%8b%e6%96%87)
 
 # 绑定异常过滤器
 
